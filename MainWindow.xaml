@@ -11,9 +11,12 @@
                         <Button Name="AddBookButton" Content="Add Book" Width="100" Margin="5" Click="AddButton_Click" />
                         <Button Name="EditBookButton" Content="Edit Book" Width="100" Margin="5" Click="EditButton_Click" />
                         <Button Name="DeleteBookButton" Content="Delete Book" Width="100" Margin="5" Click="DeleteButton_Click" />
+                        <Button Name="BorrowBookButton" Content="Borrow Book" Width="100" Margin="5" Click="BorrowButton_Click" />
+                        <Button Name="ReturnBookButton" Content="Return Book" Width="100" Margin="5" Click="ReturnButton_Click" />
                     </StackPanel>
                 </Grid>
             </TabItem>
+            
             <TabItem Header="Patrons">
                 <Grid>
                     <DataGrid Name="PatronsDataGrid" AutoGenerateColumns="True" Margin="10,10,10,50" />

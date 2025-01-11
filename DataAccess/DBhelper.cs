@@ -298,20 +298,99 @@ namespace LibraryManagementSystem.Helpers
         {
             string query = "INSERT INTO patrons (full_name, membership_id, email, phone_number, address, date_of_birth, membership_type, created_at) " +
                            "VALUES (@FullName, @MembershipId, @Email, @PhoneNumber, @Address, @DateOfBirth, @MembershipType, @CreatedAt)";
-            ExecuteNonQueryWithParams(query, new MySqlParameter("@FullName", patron.FullName), new MySqlParameter("@MembershipId", patron.MembershipId),
-                                      new MySqlParameter("@Email", patron.Email), new MySqlParameter("@PhoneNumber", patron.PhoneNumber),
-                                      new MySqlParameter("@Address", patron.Address), new MySqlParameter("@DateOfBirth", patron.DateOfBirth),
-                                      new MySqlParameter("@MembershipType", patron.MembershipType), new MySqlParameter("@CreatedAt", DateTime.Now));
+
+            try
+            {
+                ExecuteNonQueryWithParams(query,
+                    new MySqlParameter("@FullName", patron.FullName),
+                    new MySqlParameter("@MembershipId", patron.MembershipId),
+                    new MySqlParameter("@Email", patron.Email),
+                    new MySqlParameter("@PhoneNumber", patron.PhoneNumber),
+                    new MySqlParameter("@Address", patron.Address),
+                    new MySqlParameter("@DateOfBirth", patron.DateOfBirth),
+                    new MySqlParameter("@MembershipType", patron.MembershipType),
+                    new MySqlParameter("@CreatedAt", DateTime.Now));
+
+                MessageBox.Show("Patron added successfully!");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error adding patron: {ex.Message}");
+            }
+        }
+
+        public static List<Transaction> ExecuteQueryWithParams(string query, params MySqlParameter[] parameters)
+        {
+            List<Transaction> transactions = new List<Transaction>();
+
+            using (MySqlConnection connection = new MySqlConnection(connectionString))
+            {
+                connection.Open();
+                using (MySqlCommand command = new MySqlCommand(query, connection))
+                {
+                    // Add parameters to the command
+                    command.Parameters.AddRange(parameters);
+
+                    using (MySqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            Transaction transaction = new Transaction
+                            {
+                                Id = reader.GetInt32("id"),
+                                PatronId = reader.GetInt32("patron_id"),
+                                BookId = reader.GetInt32("book_id"),
+                                CheckoutDate = reader.GetDateTime("checkout_date"),
+                                DueDate = reader.GetDateTime("due_date"),
+                                ReturnDate = reader.IsDBNull(reader.GetOrdinal("return_date")) ? (DateTime?)null : reader.GetDateTime("return_date"),
+                                OverdueFine = reader.GetDecimal("overdue_fine"),
+                                CreatedAt = reader.GetDateTime("created_at")
+                            };
+
+                            transactions.Add(transaction);
+                        }
+                    }
+                }
+            }
+
+            return transactions;
         }
 
         public static void AddTransaction(Transaction transaction)
         {
             string query = "INSERT INTO transactions (patron_id, book_id, checkout_date, due_date, return_date, overdue_fine, created_at) " +
                            "VALUES (@PatronId, @BookId, @CheckoutDate, @DueDate, @ReturnDate, @OverdueFine, @CreatedAt)";
-            ExecuteNonQueryWithParams(query, new MySqlParameter("@PatronId", transaction.PatronId), new MySqlParameter("@BookId", transaction.BookId),
-                                      new MySqlParameter("@CheckoutDate", transaction.CheckoutDate), new MySqlParameter("@DueDate", transaction.DueDate),
-                                      new MySqlParameter("@ReturnDate", transaction.ReturnDate ?? (object)DBNull.Value), new MySqlParameter("@OverdueFine", transaction.OverdueFine),
-                                      new MySqlParameter("@CreatedAt", DateTime.Now));
+            ExecuteNonQueryWithParams(query,
+                new MySqlParameter("@PatronId", transaction.PatronId),
+                new MySqlParameter("@BookId", transaction.BookId),
+                new MySqlParameter("@CheckoutDate", transaction.CheckoutDate),
+                new MySqlParameter("@DueDate", transaction.DueDate),
+                new MySqlParameter("@ReturnDate", (object)transaction.ReturnDate ?? DBNull.Value),
+                new MySqlParameter("@OverdueFine", transaction.OverdueFine),
+                new MySqlParameter("@CreatedAt", transaction.CreatedAt));
+        }
+        public static void UpdateTransaction(Transaction transaction)
+        {
+            string sqlQuery = "UPDATE transactions SET return_date = @ReturnDate, overdue_fine = @OverdueFine WHERE id = @TransactionId";
+
+            using (MySqlConnection connection = new MySqlConnection(connectionString))
+            {
+                connection.Open();
+                MySqlCommand command = new MySqlCommand(sqlQuery, connection);
+                command.Parameters.AddWithValue("@ReturnDate", transaction.ReturnDate);
+                command.Parameters.AddWithValue("@OverdueFine", transaction.OverdueFine);
+                command.Parameters.AddWithValue("@TransactionId", transaction.Id);
+
+                command.ExecuteNonQuery();
+            }
+        }
+
+        public static void UpdateBookCopies(int bookId, int newCopies)
+        {
+            string query = "UPDATE books SET copies = @Copies WHERE id = @BookId";
+            ExecuteNonQueryWithParams(query,
+                new MySqlParameter("@Copies", newCopies),
+                new MySqlParameter("@BookId", bookId));
         }
 
         public static void AddFine(Fine fine)
@@ -328,7 +407,34 @@ namespace LibraryManagementSystem.Helpers
                            "VALUES (@Username, @Password, @Role, @CreatedAt)";
             ExecuteNonQueryWithParams(query, new MySqlParameter("@Username", user.Username), new MySqlParameter("@Password", user.Password),
                                       new MySqlParameter("@Role", user.Role), new MySqlParameter("@CreatedAt", DateTime.Now));
-        }
+        }public static void ApplyOverdueFines()
+{
+    string query = "SELECT * FROM transactions WHERE return_date IS NULL AND due_date < @CurrentDate";
+    DateTime currentDate = DateTime.Now;
+
+    var overdueTransactions = ExecuteQueryWithParams(query, new MySqlParameter("@CurrentDate", currentDate));
+
+    foreach (var transaction in overdueTransactions)
+    {
+        // Apply fine for overdue books (for example, $1 per day overdue)
+        int overdueDays = (currentDate - transaction.DueDate).Days;
+        decimal fineAmount = overdueDays * 1; // $1 per day fine
+
+        // Update the transaction with the fine
+        string updateTransactionQuery = "UPDATE transactions SET overdue_fine = @FineAmount WHERE id = @TransactionId";
+        ExecuteNonQueryWithParams(updateTransactionQuery,
+            new MySqlParameter("@FineAmount", fineAmount),
+            new MySqlParameter("@TransactionId", transaction.Id));
+
+        // Insert the fine into the fines table
+        string insertFineQuery = "INSERT INTO fines (patron_id, amount, date_applied) VALUES (@PatronId, @Amount, @DateApplied)";
+        ExecuteNonQueryWithParams(insertFineQuery,
+            new MySqlParameter("@PatronId", transaction.PatronId),
+            new MySqlParameter("@Amount", fineAmount),
+            new MySqlParameter("@DateApplied", currentDate));
+    }
+}
+
 
         private static void ExecuteNonQueryWithParams(string query, params MySqlParameter[] parameters)
         {
