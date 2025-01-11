@@ -218,8 +218,8 @@ namespace LibraryManagementSystem.Helpers
 
         public static bool RegisterUser(string username, string password, string role)
         {
-            // Hash the password before storing it
-            string hashedPassword = HashPassword(password);
+            // Use the hashed password passed from RegisterWindow
+            string hashedPassword = password;
 
             using (MySqlConnection connection = new MySqlConnection(connectionString))
             {
@@ -241,21 +241,30 @@ namespace LibraryManagementSystem.Helpers
                 }
             }
         }
-
-        // Method to hash the password
-        public static string HashPassword(string password)
+        public static string GetStoredPasswordHash(string username)
         {
-            using (SHA256 sha256Hash = SHA256.Create())
+            using (MySqlConnection connection = new MySqlConnection(connectionString))
             {
-                byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(password));
-                StringBuilder builder = new StringBuilder();
+                connection.Open();
+                string query = "SELECT password FROM users WHERE username = @username";
+                MySqlCommand command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@username", username);
 
-                foreach (byte t in bytes)
-                {
-                    builder.Append(t.ToString("x2"));
-                }
+                var result = command.ExecuteScalar();
+                return result?.ToString(); // Return the hashed password or null if no user found
+            }
+        }
+        public static string GetUserRole(string username)
+        {
+            using (MySqlConnection connection = new MySqlConnection(connectionString))
+            {
+                connection.Open();
+                string query = "SELECT role FROM users WHERE username = @username";
+                MySqlCommand command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@username", username);
 
-                return builder.ToString();
+                var result = command.ExecuteScalar();
+                return result?.ToString(); // Return the role or null if no user found
             }
         }
         public static void AddBook(Book book)

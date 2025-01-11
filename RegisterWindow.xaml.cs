@@ -3,6 +3,7 @@ using LibraryManagementSystem.Helpers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Windows.Controls;
+using System.Reflection.Metadata;
 
 namespace LibraryManagementSystem
 {
@@ -14,7 +15,7 @@ namespace LibraryManagementSystem
         }
 
         // Handle Register Button Click
-        private void RegisterButton_Click(object sender, RoutedEventArgs e)
+    private void RegisterButton_Click(object sender, RoutedEventArgs e)
         {
             string username = UsernameTextBox.Text;
             string password = PasswordBox.Password;
@@ -27,8 +28,9 @@ namespace LibraryManagementSystem
                 return;
             }
 
-            // Hash the password using SHA256
-            string hashedPassword = HashPassword(password);
+            // Hash the password before storing it
+            string hashedPassword = PasswordHelper.HashPassword(password);
+
 
             // Get the selected role from ComboBox
             string role = (RoleComboBox.SelectedItem as ComboBoxItem)?.Content.ToString();
@@ -39,7 +41,7 @@ namespace LibraryManagementSystem
                 return;
             }
 
-            // Register the user
+            // Register the user with the hashed password
             bool registrationSuccess = DBHelper.RegisterUser(username, hashedPassword, role);
             if (registrationSuccess)
             {
@@ -65,19 +67,5 @@ namespace LibraryManagementSystem
             this.Close();
         }
 
-        // Method to hash the password
-        private string HashPassword(string password)
-        {
-            using (SHA256 sha256 = SHA256.Create())
-            {
-                byte[] hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-                StringBuilder stringBuilder = new StringBuilder();
-                foreach (byte b in hashBytes)
-                {
-                    stringBuilder.Append(b.ToString("x2"));
-                }
-                return stringBuilder.ToString();
-            }
-        }
     }
 }

@@ -1,4 +1,7 @@
 ﻿using LibraryManagementSystem.Models;
+using LibraryManagementSystem.Helpers;
+using System.Security.Cryptography;
+using System.Text;
 using System.Windows;
 
 namespace LibraryManagementSystem
@@ -15,8 +18,11 @@ namespace LibraryManagementSystem
             string username = UsernameTextBox.Text;
             string password = PasswordBox.Password;
 
+            // Hash the entered password to compare it with the stored hashed password
+            string hashedPassword = PasswordHelper.HashPassword(password);
+
             // Validate login and get the user object (you can implement your authentication logic here)
-            User authenticatedUser = ValidateLogin(username, password);
+            User authenticatedUser = ValidateLogin(username, hashedPassword);
 
             if (authenticatedUser != null)
             {
@@ -34,22 +40,29 @@ namespace LibraryManagementSystem
         }
 
         // Simulating a simple login validation (replace with real logic)
-        private User ValidateLogin(string username, string password)
+        private User ValidateLogin(string username, string hashedPassword)
         {
-            // For demonstration purposes: Replace with your actual authentication logic (e.g., database query)
-            if (username == "admin" && password == "password")
+            // Query the database for the stored hash for the given username
+            string storedPasswordHash = DBHelper.GetStoredPasswordHash(username); // Assuming this method exists in DBHelper
+
+            if (storedPasswordHash == null)
             {
-                return new User { Username = "admin", Role = "Admin" }; // Example user
+                return null; // User does not exist or error occurred
             }
-            else if (username == "librarian" && password == "librarianpass")
+
+            // Compare the entered hashed password with the stored hash
+            if (hashedPassword == storedPasswordHash)
             {
-                return new User { Username = "librarian", Role = "Librarian" }; // Example librarian user
+                // Query the role from the database (assuming the role is also stored in the database)
+                string role = DBHelper.GetUserRole(username); // This should return the user's role from the DB
+
+                return new User { Username = username, Role = role };
             }
-            else
-            {
-                return null; // Invalid login
-            }
+
+            return null; // Invalid login
         }
+
+
         private void RegisterButton_Click(object sender, RoutedEventArgs e)
         {
             // Open the registration window (you could create a RegisterWindow.xaml for this)
