@@ -1,0 +1,36 @@
+﻿<Window x:Class="LibraryManagementSystem.PatronPage"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Patron Management" Height="400" Width="600">
+    <Grid>
+        <TabControl>
+            <!-- Tab for Add / Update Patron -->
+            <TabItem Header="Manage Patron">
+                <StackPanel Margin="10">
+                    <TextBlock Text="Full Name" />
+                    <TextBox x:Name="FullNameTextBox" Width="200" Margin="0,5"/>
+
+                    <TextBlock Text="Email" />
+                    <TextBox x:Name="EmailTextBox" Width="200" Margin="0,5"/>
+
+                    <TextBlock Text="Phone Number" />
+                    <TextBox x:Name="PhoneNumberTextBox" Width="200" Margin="0,5"/>
+
+                    <TextBlock Text="Address" />
+                    <TextBox x:Name="AddressTextBox" Width="200" Margin="0,5"/>
+
+                    <Button Content="Add Patron" Width="100" Height="30" Margin="0,10" HorizontalAlignment="Left" Click="AddPatronButton_Click"/>
+                    <Button Content="Update Patron" Width="100" Height="30" Margin="0,10" HorizontalAlignment="Left" Click="UpdatePatronButton_Click"/>
+                </StackPanel>
+            </TabItem>
+
+            <!-- Tab for View Patrons -->
+            <TabItem Header="View Patrons">
+                <StackPanel Margin="10">
+                    <ListBox x:Name="PatronsListBox" Width="550" Height="200" Margin="0,10" DisplayMemberPath="FullName"/>
+                    <Button Content="Delete Selected Patron" Width="150" Height="30" HorizontalAlignment="Left" Click="DeletePatronButton_Click"/>
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>
