@@ -64,13 +64,14 @@ namespace LibraryManagementSystem
                     MessageBox.Show("Unknown tab selected.");
                     break;
             }
+            LoadData();
         }
 
         private void AddBook()
         {
-            // Example logic to add a book
-            // Open a dialog for adding a book and then update the database
-            MessageBox.Show("Add functionality for Books.");
+            // Open the AddBookForm dialog
+            AddBookForm addBookForm = new AddBookForm();
+            addBookForm.ShowDialog(); // Show the dialog and wait for user input
         }
 
         private void AddPatron()

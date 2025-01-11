@@ -4,6 +4,7 @@ using MySql.Data.MySqlClient;
 using LibraryManagementSystem.Models;
 using System.Text;
 using System.Security.Cryptography;
+using System.Windows;
 
 namespace LibraryManagementSystem.Helpers
 {
@@ -271,11 +272,27 @@ namespace LibraryManagementSystem.Helpers
         {
             string query = "INSERT INTO books (title, author, isbn, genre, publisher, year_published, copies, created_at) " +
                            "VALUES (@Title, @Author, @ISBN, @Genre, @Publisher, @YearPublished, @Copies, @CreatedAt)";
-            ExecuteNonQueryWithParams(query, new MySqlParameter("@Title", book.Title), new MySqlParameter("@Author", book.Author),
-                                      new MySqlParameter("@ISBN", book.ISBN), new MySqlParameter("@Genre", book.Genre),
-                                      new MySqlParameter("@Publisher", book.Publisher), new MySqlParameter("@YearPublished", book.YearPublished),
-                                      new MySqlParameter("@Copies", book.Copies), new MySqlParameter("@CreatedAt", DateTime.Now));
+
+            try
+            {
+                ExecuteNonQueryWithParams(query,
+                    new MySqlParameter("@Title", book.Title),
+                    new MySqlParameter("@Author", book.Author),
+                    new MySqlParameter("@ISBN", book.ISBN),
+                    new MySqlParameter("@Genre", book.Genre),
+                    new MySqlParameter("@Publisher", book.Publisher),
+                    new MySqlParameter("@YearPublished", book.YearPublished),
+                    new MySqlParameter("@Copies", book.Copies),
+                    new MySqlParameter("@CreatedAt", DateTime.Now));
+
+                MessageBox.Show("Book added successfully!");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error adding book: {ex.Message}");
+            }
         }
+
 
         public static void AddPatron(Patron patron)
         {
